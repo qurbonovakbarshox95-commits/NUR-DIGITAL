@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="ru" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NUR DIGITAL — Единый Национальный Цифровой Портал Узбекистана</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet.js Interactive Map CSS & JS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        nur: {
+                            50: '#f0fdfa',
+                            100: '#ccfbf1',
+                            500: '#0d5c63',
+                            600: '#09474d',
+                            700: '#053338',
+                            gold: '#f4a261',
+                            goldLight: '#e9c46a',
+                            accent: '#2a9d8f',
+                            bgDark: '#080d1a',
+                            cardDark: 'rgba(15, 23, 42, 0.85)',
+                            bgLight: '#f8fafc',
+                            cardLight: '#ffffff'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Plus Jakarta Sans', 'sans-serif'],
+                        display: ['Outfit', 'sans-serif']
+                    },
+                    boxShadow: {
+                        'glow-teal': '0 0 25px -5px rgba(13, 92, 99, 0.4)',
+                        'glow-gold': '0 0 25px -5px rgba(244, 162, 97, 0.4)'
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom UI transitions & smooth interactions */
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        .glass-card {
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+        }
+
+        /* Subtle Uzbek Architectural Arch Border Accent */
+        .arch-header {
+            border-top-left-radius: 1.5rem;
+            border-top-right-radius: 1.5rem;
+            position: relative;
+        }
+        .arch-header::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 10%;
+            right: 10%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #f4a261, #0d5c63, transparent);
+        }
+
+        /* Wheel of Fortune Styling */
+        #wheelCanvas {
+            transition: transform 4s cubic-bezier(0.15, 0.99, 0.18, 1);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #0d5c63;
+            border-radius: 4px;
+        }
+
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+            animation: fadeIn 0.3s ease-in-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(6px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 dark:bg-nur-bgDark dark:text-slate-100 min-h-screen flex flex-col selection:bg-nur-gold selection:text-slate-950 transition-colors duration-300">
+
+    <!-- TOP STATUS BAR -->
+    <header class="sticky top-0 z-50 bg-white/90 dark:bg-slate-950/90 border-b border-slate-200 dark:border-slate-800 backdrop-blur-md transition-colors duration-300">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2.5 flex flex-wrap items-center justify-between gap-3 text-xs">
+            
+            <!-- Logo & Brand -->
+            <div class="flex items-center gap-3">
+                <button onclick="easterEggClick()" class="w-9 h-9 rounded-xl bg-gradient-to-tr from-nur-500 via-teal-500 to-nur-gold p-0.5 shadow-glow-teal transform active:scale-95 transition">
+                    <div class="w-full h-full bg-slate-900 dark:bg-slate-950 rounded-[10px] flex items-center justify-center text-nur-gold">
+                        <i class="fa-solid fa-sun text-base"></i>
+                    </div>
+                </button>
+                <div>
+                    <div class="flex items-center gap-2">
+                        <span class="font-display font-extrabold text-lg text-slate-900 dark:text-white tracking-wide">NUR <span class="text-nur-gold">DIGITAL</span></span>
+                        <span class="text-[9px] bg-nur-500/20 text-nur-gold px-1.5 py-0.5 rounded font-mono border border-nur-gold/30">v3.5 PORTAL</span>
+                    </div>
+                    <span id="liveDateTime" class="text-[11px] text-slate-500 dark:text-slate-400 font-mono">--:--:-- | Ташкент</span>
+                </div>
+            </div>
+
+            <!-- Global Stats & Quick Info -->
+            <div class="flex items-center gap-4">
+                <!-- User Virtual Balance -->
+                <div onclick="switchTab('bank')" class="cursor-pointer bg-slate-200/80 hover:bg-slate-300 dark:bg-slate-800/80 dark:hover:bg-slate-800 px-3.5 py-1.5 rounded-xl border border-slate-300 dark:border-slate-700/80 flex items-center gap-2 transition">
+                    <i class="fa-solid fa-coins text-nur-gold"></i>
+                    <div>
+                        <div class="text-[10px] text-slate-500 dark:text-slate-400 uppercase leading-none">Баланс NUR Coins</div>
+                        <div class="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono" id="headerBalanceDisplay">1 000 NC</div>
+                    </div>
+                </div>
+
+                <!-- Notifications Popup Button -->
+                <button onclick="toggleNotifications()" class="relative p-2 rounded-xl bg-slate-200 dark:bg-slate-800/80 hover:bg-slate-300 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition">
+                    <i class="fa-solid fa-bell"></i>
+                    <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-nur-gold rounded-full animate-ping"></span>
+                    <span class="absolute -top-1 -right-1 w-2.5 h-2.5 bg-nur-gold rounded-full"></span>
+                </button>
+
+                <!-- Theme Toggle Button -->
+                <button onclick="toggleTheme()" class="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold border border-slate-300 dark:border-slate-700 transition flex items-center gap-1.5">
+                    <span id="themeIcon">🌙</span>
+                    <span id="themeText" class="hidden sm:inline">Ночь</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- MAIN NAVIGATION MENU TABS -->
+        <nav class="bg-slate-200/90 dark:bg-slate-950 border-t border-slate-300 dark:border-slate-800/80 px-4 sm:px-6 transition-colors duration-300">
+            <div class="max-w-7xl mx-auto flex items-center gap-1 overflow-x-auto py-1.5 text-xs font-medium no-scrollbar">
+                <button onclick="switchTab('home')" id="tabBtn-home" class="nav-tab px-3.5 py-2 rounded-xl text-nur-gold bg-white dark:bg-slate-800 font-bold whitespace-nowrap flex items-center gap-2 shadow-sm transition">
+                    <i class="fa-solid fa-house"></i> Главная
+                </button>
+                <button onclick="switchTab('ai')" id="tabBtn-ai" class="nav-tab px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fa-solid fa-brain text-cyan-500 dark:text-cyan-400"></i> AI-Помощник "Ilm"
+                </button>
+                <button onclick="switchTab('weather')" id="tabBtn-weather" class="nav-tab px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fa-solid fa-cloud-sun text-amber-500 dark:text-amber-400"></i> Погода
+                </button>
+                <button onclick="switchTab('map')" id="tabBtn-map" class="nav-tab px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fa-solid fa-map-location-dot text-emerald-600 dark:text-emerald-400"></i> Карта Узбекистана
+                </button>
+                <button onclick="switchTab('games')" id="tabBtn-games" class="nav-tab px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fa-solid fa-gamepad text-purple-600 dark:text-purple-400"></i> Игровой Клуб
+                </button>
+                <button onclick="switchTab('wheel')" id="tabBtn-wheel" class="nav-tab px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fa-solid fa-dharmachakra text-nur-gold"></i> Колесо Удачи
+                </button>
+                <button onclick="switchTab('bank')" id="tabBtn-bank" class="nav-tab px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fa-solid fa-vault text-teal-600 dark:text-teal-400"></i> NUR Банк
+                </button>
+                <button onclick="switchTab('market')" id="tabBtn-market" class="nav-tab px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fa-solid fa-store text-pink-600 dark:text-pink-400"></i> NUR Маркет
+                </button>
+                <button onclick="switchTab('tools')" id="tabBtn-tools" class="nav-tab px-3.5 py-2 rounded-xl text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white whitespace-nowrap flex items-center gap-2 transition">
+                    <i class="fa-solid fa-wrench text-blue-600 dark:text-blue-400"></i> Сервисы & Утилиты
+                </button>
+            </div>
+        </nav>
+    </header>
+
+    <!-- NOTIFICATION DROPDOWN POPUP -->
+    <div id="notificationsPanel" class="hidden fixed top-16 right-6 z-50 w-80 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl p-4 space-y-3">
+        <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+            <h4 class="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-bell text-nur-gold"></i> Уведомления портала
+            </h4>
+            <button onclick="toggleNotifications()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white text-xs"><i class="fa-solid fa-xmark"></i></button>
+        </div>
+        <div class="space-y-2 text-xs">
+            <div class="p-2.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/60">
+                <p class="font-semibold text-emerald-600 dark:text-emerald-400">Приветственный бонус!</p>
+                <p class="text-slate-600 dark:text-slate-300 text-[11px]">Вам начислено 1000 NUR Coins на счет в NUR Банке.</p>
+            </div>
+            <div class="p-2.5 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700/60">
+                <p class="font-semibold text-nur-gold">Колесо фортуны готово</p>
+                <p class="text-slate-600 dark:text-slate-300 text-[11px]">Не забудьте испытать удачу на этой неделе!</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- MAIN BODY CONTAINER -->
+    <main class="flex-grow max-w-7xl w-full mx-auto p-4 sm:p-6">
+
+        <!-- TAB 1: HOME DASHBOARD -->
+        <section id="tab-home" class="tab-content active space-y-6">
+            
+            <!-- Hero Welcome Card -->
+            <div class="relative rounded-3xl bg-gradient-to-r from-nur-600 via-nur-500 to-slate-900 p-6 sm:p-8 overflow-hidden shadow-2xl border border-nur-500/40 arch-header text-white">
+                <div class="relative z-10 space-y-4 max-w-2xl">
+                    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-nur-gold/20 text-nur-gold border border-nur-gold/30 text-xs font-semibold">
+                        <i class="fa-solid fa-star"></i> Добро пожаловать в единую цифровую среду
+                    </span>
+                    <h1 class="text-3xl sm:text-4xl font-display font-extrabold leading-tight">
+                        NUR DIGITAL — Инновации, Удобство и Развлечения
+                    </h1>
+                    <p class="text-sm text-slate-100 leading-relaxed">
+                        Все функциональные сервисы в одном месте: умный AI-консультант, погода по Узбекистану, интерактивная карта достопримечательностей, игры, банк и маркет.
+                    </p>
+                    
+                    <div class="flex flex-wrap gap-3 pt-2">
+                        <button onclick="switchTab('ai')" class="px-5 py-2.5 rounded-xl bg-nur-gold hover:bg-yellow-400 text-slate-950 font-bold text-xs shadow-glow-gold transition flex items-center gap-2">
+                            <i class="fa-solid fa-robot"></i> Задать вопрос AI "Ilm"
+                        </button>
+                        <button onclick="switchTab('wheel')" class="px-5 py-2.5 rounded-xl bg-slate-900/80 hover:bg-slate-900 text-white font-semibold text-xs border border-slate-700 transition flex items-center gap-2">
+                            <i class="fa-solid fa-dharmachakra text-nur-gold"></i> Вращать Колесо Удачи
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Grid Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                
+                <!-- Quick Card 1: Weather Mini -->
+                <div onclick="switchTab('weather')" class="cursor-pointer bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition space-y-3 group shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Погода (Ташкент)</span>
+                        <i class="fa-solid fa-sun-cloud text-amber-500 dark:text-amber-400 text-xl group-hover:scale-110 transition"></i>
+                    </div>
+                    <div class="flex items-baseline gap-2">
+                        <span class="text-3xl font-extrabold text-slate-900 dark:text-white font-display" id="miniTemp">+24°C</span>
+                        <span class="text-xs text-emerald-600 dark:text-emerald-400">Ясно</span>
+                    </div>
+                    <p class="text-[11px] text-slate-500 dark:text-slate-400">Влажность: 42% | Ветер: 4.2 м/с</p>
+                </div>
+
+                <!-- Quick Card 2: AI Quick Access -->
+                <div onclick="switchTab('ai')" class="cursor-pointer bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition space-y-3 group shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">ИИ Ассистент</span>
+                        <i class="fa-solid fa-brain text-cyan-500 dark:text-cyan-400 text-xl group-hover:scale-110 transition"></i>
+                    </div>
+                    <div>
+                        <div class="text-base font-bold text-slate-900 dark:text-white">"Ilm" AI Помощник</div>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Ответы по учёбе, коду, поездкам и науке</p>
+                    </div>
+                    <span class="inline-block text-[10px] text-cyan-600 dark:text-cyan-400 font-semibold">Начать чат →</span>
+                </div>
+
+                <!-- Quick Card 3: Interactive Map -->
+                <div onclick="switchTab('map')" class="cursor-pointer bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition space-y-3 group shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Карта Локаций</span>
+                        <i class="fa-solid fa-map text-emerald-500 dark:text-emerald-400 text-xl group-hover:scale-110 transition"></i>
+                    </div>
+                    <div>
+                        <div class="text-base font-bold text-slate-900 dark:text-white">Карта Узбекистана</div>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">Исторические памятники, метки, навигация</p>
+                    </div>
+                    <span class="inline-block text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold">Открыть карту →</span>
+                </div>
+
+                <!-- Quick Card 4: Games & Fun -->
+                <div onclick="switchTab('games')" class="cursor-pointer bg-white dark:bg-slate-900/80 hover:bg-slate-50 dark:hover:bg-slate-800 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 transition space-y-3 group shadow-sm">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-slate-500 dark:text-slate-400 uppercase">Игры & Развлечения</span>
+                        <i class="fa-solid fa-gamepad text-purple-500 dark:text-purple-400 text-xl group-hover:scale-110 transition"></i>
+                    </div>
+                    <div>
+                        <div class="text-base font-bold text-slate-900 dark:text-white">5 Встроенных Игр</div>
+                        <p class="text-[11px] text-slate-500 dark:text-slate-400">2048, Змейка, Память, Викторины</p>
+                    </div>
+                    <span class="inline-block text-[10px] text-purple-600 dark:text-purple-400 font-semibold">Играть сейчас →</span>
+                </div>
+
+            </div>
+
+            <!-- Global Search Banner -->
+            <div class="bg-white dark:bg-slate-900/90 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-center gap-4 shadow-sm">
+                <div class="flex-grow w-full relative">
+                    <i class="fa-solid fa-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-slate-400"></i>
+                    <input type="text" id="globalHomeSearch" placeholder="Универсальный поиск по порталу (например: NUR2026, Самарканд, Змейка, Курс валют)..." 
+                        onkeypress="if(event.key==='Enter') executeGlobalSearch()"
+                        class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700/80 rounded-xl py-3 pl-11 pr-4 text-sm text-slate-900 dark:text-white focus:outline-none focus:border-nur-gold">
+                </div>
+                <button onclick="executeGlobalSearch()" class="w-full md:w-auto px-6 py-3 bg-nur-500 hover:bg-nur-600 text-white font-bold text-xs rounded-xl transition shadow-glow-teal">
+                    Найти
+                </button>
+            </div>
+        </section>
+
+        <!-- TAB 2: AI ASSISTANT "ILM" -->
+        <section id="tab-ai" class="tab-content space-y-4">
+            <div class="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 flex flex-col h-[650px] shadow-sm">
+                
+                <!-- AI Chat Header -->
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-4">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-cyan-500 to-nur-gold p-0.5">
+                            <div class="w-full h-full bg-slate-900 dark:bg-slate-950 rounded-[10px] flex items-center justify-center text-cyan-400">
+                                <i class="fa-solid fa-brain text-lg"></i>
+                            </div>
+                        </div>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                                ИИ-Ассистент "Ilm" (Илм)
+                                <span class="text-[10px] bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 px-2 py-0.5 rounded border border-cyan-500/30 font-mono">DEMO / GEMINI READY</span>
+                            </h2>
+                            <p class="text-xs text-slate-500 dark:text-slate-400">Универсальный помощник по науке, учебе, коду и жизни</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="openGeminiModal()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs text-slate-700 dark:text-slate-300 border border-slate-300 dark:border-slate-700 transition">
+                            <i class="fa-solid fa-key text-nur-gold mr-1"></i> Gemini API Key
+                        </button>
+                        <button onclick="clearAiChat()" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-xs text-rose-500 border border-slate-300 dark:border-slate-700 transition">
+                            <i class="fa-solid fa-trash mr-1"></i> Очистить
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Chat History Window -->
+                <div id="aiChatWindow" class="flex-grow my-4 space-y-4 overflow-y-auto pr-2 text-xs">
+                    <!-- Default AI Greeting -->
+                    <div class="flex gap-3 max-w-[85%]">
+                        <div class="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-500 dark:text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/30">
+                            <i class="fa-solid fa-robot text-xs"></i>
+                        </div>
+                        <div class="bg-slate-100 dark:bg-slate-800/90 p-3.5 rounded-2xl rounded-tl-none border border-slate-200 dark:border-slate-700/60 text-slate-800 dark:text-slate-200 space-y-1">
+                            <p class="font-semibold text-cyan-600 dark:text-cyan-400">Ассалому алейкум! Я ИИ-помощник Ilm.</p>
+                            <p>Задайте мне любой вопрос по математике, истории Узбекистана, программированию, путешествиям или обычному быту!</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Typing Indicator (Hidden by default) -->
+                <div id="aiTypingIndicator" class="hidden text-[11px] text-cyan-600 dark:text-cyan-400 font-mono flex items-center gap-2 pb-2">
+                    <i class="fa-solid fa-circle-notch animate-spin"></i> Ilm генерирует ответ...
+                </div>
+
+                <!-- Input & Send Controls -->
+                <div class="flex items-center gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <input type="text" id="aiUserInput" onkeypress="if(event.key==='Enter') sendAiMessage()" placeholder="Напишите ваш вопрос здесь..." class="flex-grow bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-3 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-cyan-400">
+                    <button onclick="sendAiMessage()" class="px-5 py-3 bg-cyan-600 hover:bg-cyan-500 text-white dark:text-slate-950 font-bold rounded-xl text-xs transition flex items-center gap-1.5">
+                        <i class="fa-solid fa-paper-plane"></i>
+                        <span class="hidden sm:inline">Отправить</span>
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 3: WEATHER -->
+        <section id="tab-weather" class="tab-content space-y-6">
+            <div class="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-6 shadow-sm">
+                
+                <!-- Weather Header & Search -->
+                <div class="flex flex-col sm:flex-row items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-cloud-sun text-amber-500 dark:text-amber-400"></i> Погода в Узбекистане
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Актуальный гидрометеорологический прогноз</p>
+                    </div>
+
+                    <!-- City Select Dropdown & Search -->
+                    <div class="flex items-center gap-2 w-full sm:w-auto">
+                        <select id="weatherCitySelect" onchange="changeCityWeather(this.value)" class="bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-amber-400">
+                            <option value="Ташкент">Ташкент</option>
+                            <option value="Самарканд">Самарканд</option>
+                            <option value="Бухара">Бухара</option>
+                            <option value="Хива">Хива</option>
+                            <option value="Андижан">Андижан</option>
+                            <option value="Наманган">Наманган</option>
+                            <option value="Фергана">Фергана</option>
+                            <option value="Нукус">Нукус</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Main Current Weather Box -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 items-center bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-950 dark:to-slate-900 p-6 rounded-2xl border border-slate-300 dark:border-slate-800">
+                    <div class="space-y-2">
+                        <span class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-widest" id="weatherCityName">Ташкент</span>
+                        <div class="text-5xl font-extrabold text-slate-900 dark:text-white font-display" id="weatherTemp">+24°C</div>
+                        <p class="text-xs text-slate-700 dark:text-slate-300" id="weatherCondition">Солнечно, без осадков</p>
+                    </div>
+
+                    <div class="space-y-2 text-xs text-slate-700 dark:text-slate-300 border-y md:border-y-0 md:border-x border-slate-300 dark:border-slate-800 py-4 md:py-0 md:px-6">
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 dark:text-slate-400">Ощущается как:</span>
+                            <span class="font-bold text-slate-900 dark:text-white" id="weatherFeels">+25°C</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 dark:text-slate-400">Влажность:</span>
+                            <span class="font-bold text-slate-900 dark:text-white" id="weatherHumidity">42%</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span class="text-slate-500 dark:text-slate-400">Скорость ветра:</span>
+                            <span class="font-bold text-slate-900 dark:text-white" id="weatherWind">4.2 м/с</span>
+                        </div>
+                    </div>
+
+                    <div class="text-center">
+                        <i class="fa-solid fa-sun text-6xl text-amber-500 dark:text-amber-400 animate-pulse"></i>
+                    </div>
+                </div>
+
+                <!-- 5-Day Forecast Grid -->
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">Прогноз на 5 дней</h3>
+                    <div class="grid grid-cols-2 sm:grid-cols-5 gap-3" id="weatherForecastGrid">
+                        <!-- Populated dynamically via JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 4: INTERACTIVE MAP -->
+        <section id="tab-map" class="tab-content space-y-4">
+            <div class="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-4 sm:p-6 space-y-4 shadow-sm">
+                <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-map-location-dot text-emerald-500 dark:text-emerald-400"></i> Интерактивная Карта
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Исследуйте памятники, города и добавляйте личные метки</p>
+                    </div>
+
+                    <div class="flex items-center gap-2">
+                        <button onclick="getUserLocation()" class="px-3 py-1.5 rounded-xl bg-emerald-500/10 dark:bg-emerald-600/20 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-xs font-semibold border border-emerald-500/30 transition flex items-center gap-1.5">
+                            <i class="fa-solid fa-location-crosshairs"></i> Моё местоположение
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Leaflet Container -->
+                <div class="w-full h-[500px] rounded-2xl overflow-hidden border border-slate-300 dark:border-slate-800 relative shadow-inner">
+                    <div id="leafletMap" class="w-full h-full"></div>
+                </div>
+
+                <div class="text-xs text-slate-500 dark:text-slate-400 flex items-center gap-2">
+                    <i class="fa-solid fa-circle-info text-emerald-500 dark:text-emerald-400"></i>
+                    <span>Кликните по любой точке на карте, чтобы поставить собственную заметку-маркер!</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- TAB 5: GAMES CLUB -->
+        <section id="tab-games" class="tab-content space-y-6">
+            
+            <!-- Game Selector Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <button onclick="activateGame('snake')" id="gameBtn-snake" class="game-select-btn bg-white dark:bg-slate-800 border-2 border-purple-500 p-3 rounded-2xl text-left space-y-1 shadow-sm">
+                    <div class="text-purple-600 dark:text-purple-400 font-bold text-xs"><i class="fa-solid fa-staff-snake"></i> Змейка</div>
+                    <div class="text-[10px] text-slate-500 dark:text-slate-400">Классическая аркада</div>
+                </button>
+                <button onclick="activateGame('2048')" id="gameBtn-2048" class="game-select-btn bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl text-left space-y-1 hover:border-slate-400 dark:hover:border-slate-700 shadow-sm">
+                    <div class="text-amber-600 dark:text-amber-400 font-bold text-xs"><i class="fa-solid fa-border-all"></i> 2048</div>
+                    <div class="text-[10px] text-slate-500 dark:text-slate-400">Логическая головоломка</div>
+                </button>
+                <button onclick="activateGame('memory')" id="gameBtn-memory" class="game-select-btn bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl text-left space-y-1 hover:border-slate-400 dark:hover:border-slate-700 shadow-sm">
+                    <div class="text-emerald-600 dark:text-emerald-400 font-bold text-xs"><i class="fa-solid fa-clone"></i> Парные Карты</div>
+                    <div class="text-[10px] text-slate-500 dark:text-slate-400">Тренировка памяти</div>
+                </button>
+                <button onclick="activateGame('math')" id="gameBtn-math" class="game-select-btn bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 p-3 rounded-2xl text-left space-y-1 hover:border-slate-400 dark:hover:border-slate-700 shadow-sm">
+                    <div class="text-cyan-600 dark:text-cyan-400 font-bold text-xs"><i class="fa-solid fa-calculator"></i> Математика</div>
+                    <div class="text-[10px] text-slate-500 dark:text-slate-400">Скоростной счёт</div>
+                </button>
+            </div>
+
+            <!-- GAME 1: SNAKE -->
+            <div id="gameView-snake" class="game-container bg-white dark:bg-slate-900/90 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 flex flex-col items-center space-y-4 shadow-sm">
+                <div class="w-full flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-staff-snake text-purple-500 dark:text-purple-400"></i> Игра "Змейка"</h3>
+                    <div class="flex items-center gap-4 text-xs font-mono">
+                        <div class="text-slate-700 dark:text-slate-300">Счёт: <span id="snakeScore" class="text-purple-600 dark:text-purple-400 font-bold">0</span></div>
+                        <div class="text-slate-700 dark:text-slate-300">Рекорд: <span id="snakeHighScore" class="text-nur-gold font-bold">0</span></div>
+                    </div>
+                </div>
+
+                <canvas id="snakeCanvas" width="400" height="400" class="bg-slate-900 rounded-2xl border-2 border-slate-700 max-w-full"></canvas>
+
+                <div class="flex gap-3">
+                    <button onclick="startSnakeGame()" class="px-6 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl text-xs transition">
+                        Старт / Перезапуск
+                    </button>
+                </div>
+                <p class="text-[11px] text-slate-500 dark:text-slate-400">Управление: Стрелки на клавиатуре или кнопки ниже</p>
+                
+                <!-- Mobile D-Pad controls -->
+                <div class="grid grid-cols-3 gap-2 w-36 sm:hidden">
+                    <div></div>
+                    <button onclick="handleSnakeDir('UP')" class="p-3 bg-slate-200 dark:bg-slate-800 rounded-xl text-center"><i class="fa-solid fa-arrow-up"></i></button>
+                    <div></div>
+                    <button onclick="handleSnakeDir('LEFT')" class="p-3 bg-slate-200 dark:bg-slate-800 rounded-xl text-center"><i class="fa-solid fa-arrow-left"></i></button>
+                    <button onclick="handleSnakeDir('DOWN')" class="p-3 bg-slate-200 dark:bg-slate-800 rounded-xl text-center"><i class="fa-solid fa-arrow-down"></i></button>
+                    <button onclick="handleSnakeDir('RIGHT')" class="p-3 bg-slate-200 dark:bg-slate-800 rounded-xl text-center"><i class="fa-solid fa-arrow-right"></i></button>
+                </div>
+            </div>
+
+            <!-- GAME 2: 2048 -->
+            <div id="gameView-2048" class="game-container hidden bg-white dark:bg-slate-900/90 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 flex flex-col items-center space-y-4 shadow-sm">
+                <div class="w-full flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-border-all text-amber-500 dark:text-amber-400"></i> Головоломка 2048</h3>
+                    <div class="flex items-center gap-4 text-xs font-mono">
+                        <div class="text-slate-700 dark:text-slate-300">Очки: <span id="game2048Score" class="text-amber-600 dark:text-amber-400 font-bold">0</span></div>
+                    </div>
+                </div>
+
+                <div id="grid2048" class="grid grid-cols-4 gap-3 bg-slate-200 dark:bg-slate-950 p-4 rounded-2xl border border-slate-300 dark:border-slate-800 w-80 h-80">
+                    <!-- Populated dynamically via JS -->
+                </div>
+
+                <button onclick="init2048()" class="px-6 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition">
+                    Новая Игра
+                </button>
+            </div>
+
+            <!-- GAME 3: MEMORY CARDS -->
+            <div id="gameView-memory" class="game-container hidden bg-white dark:bg-slate-900/90 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 flex flex-col items-center space-y-4 shadow-sm">
+                <div class="w-full flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-clone text-emerald-500 dark:text-emerald-400"></i> Найди Пару</h3>
+                    <div class="text-xs font-mono text-emerald-600 dark:text-emerald-400">Ходов: <span id="memoryMoves">0</span></div>
+                </div>
+
+                <div id="memoryGrid" class="grid grid-cols-4 gap-3 w-80">
+                    <!-- Cards populated dynamically -->
+                </div>
+
+                <button onclick="initMemoryGame()" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl text-xs transition">
+                    Сбросить Карты
+                </button>
+            </div>
+
+            <!-- GAME 4: MATH CHALLENGE -->
+            <div id="gameView-math" class="game-container hidden bg-white dark:bg-slate-900/90 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 flex flex-col items-center space-y-4 shadow-sm">
+                <div class="w-full flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-3">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2"><i class="fa-solid fa-calculator text-cyan-500 dark:text-cyan-400"></i> Математический Спринт</h3>
+                    <div class="text-xs font-mono text-cyan-600 dark:text-cyan-400">Баллы: <span id="mathScore">0</span></div>
+                </div>
+
+                <div class="text-center space-y-4 my-4">
+                    <div class="text-4xl font-extrabold text-slate-900 dark:text-white font-mono" id="mathQuestion">12 + 15 = ?</div>
+                    <input type="number" id="mathAnswerInput" onkeypress="if(event.key==='Enter') checkMathAnswer()" placeholder="Ответ..." class="w-40 bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 text-center text-lg font-bold text-slate-900 dark:text-white rounded-xl py-2 focus:outline-none focus:border-cyan-400">
+                    <div>
+                        <button onclick="checkMathAnswer()" class="px-6 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white dark:text-slate-950 font-bold rounded-xl text-xs transition">
+                            Проверить
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- TAB 6: WHEEL OF FORTUNE -->
+        <section id="tab-wheel" class="tab-content space-y-6">
+            <div class="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 flex flex-col items-center space-y-6 text-center shadow-sm">
+                
+                <div>
+                    <span class="px-3 py-1 bg-nur-gold/20 text-nur-gold text-xs font-bold rounded-full border border-nur-gold/30 uppercase">
+                        Еженедельный бонус
+                    </span>
+                    <h2 class="text-2xl font-bold text-slate-900 dark:text-white mt-2">Колесо Фортуны NUR DIGITAL</h2>
+                    <p class="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto mt-1">Испытайте удачу 1 раз в неделю и выигрывайте виртуальную валюту NUR Coins для покупок и перечислений!</p>
+                </div>
+
+                <!-- Wheel Canvas Container -->
+                <div class="relative w-72 h-72 sm:w-80 sm:h-80 my-2">
+                    <!-- Pointer Indicator -->
+                    <div class="absolute -top-3 left-1/2 -translate-x-1/2 z-20 text-nur-gold text-3xl drop-shadow-lg">
+                        <i class="fa-solid fa-location-pin"></i>
+                    </div>
+
+                    <canvas id="wheelCanvas" width="320" height="320" class="w-full h-full rounded-full border-4 border-nur-gold shadow-glow-gold"></canvas>
+                </div>
+
+                <!-- Spin Button & Timer Status -->
+                <div class="space-y-2">
+                    <button id="spinWheelBtn" onclick="spinWheel()" class="px-8 py-3.5 bg-gradient-to-r from-nur-gold to-yellow-500 hover:from-yellow-400 hover:to-yellow-500 text-slate-950 font-extrabold text-sm rounded-2xl shadow-glow-gold transition transform active:scale-95">
+                        <i class="fa-solid fa-rotate text-xs mr-1"></i> ВРАЩАТЬ КОЛЕСО
+                    </button>
+                    <p id="wheelTimerText" class="text-xs text-slate-500 dark:text-slate-400 font-mono"></p>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 7: NUR BANK -->
+        <section id="tab-bank" class="tab-content space-y-6">
+            <div class="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-6 shadow-sm">
+                
+                <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-vault text-teal-500 dark:text-teal-400"></i> Виртуальный NUR Банк
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Управление виртуальными счетами и переводами</p>
+                    </div>
+                </div>
+
+                <!-- Accounts Cards Carousel/Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-gradient-to-br from-nur-700 to-nur-600 text-white p-5 rounded-2xl border border-nur-500/40 space-y-2 shadow-md">
+                        <span class="text-[11px] text-slate-200 font-semibold uppercase">Основной Счёт</span>
+                        <div class="text-2xl font-extrabold text-white font-mono" id="bankMainBalance">1 000 NC</div>
+                        <p class="text-[10px] text-emerald-300">Доступно для перевода</p>
+                    </div>
+
+                    <div class="bg-slate-100 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 shadow-sm">
+                        <span class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Накопительный</span>
+                        <div class="text-2xl font-extrabold text-nur-gold font-mono" id="bankSavingsBalance">0 NC</div>
+                        <p class="text-[10px] text-slate-500">+5% бонуса в месяц</p>
+                    </div>
+
+                    <div class="bg-slate-100 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-2 shadow-sm">
+                        <span class="text-[11px] text-slate-500 dark:text-slate-400 font-semibold uppercase">Игровой Счёт</span>
+                        <div class="text-2xl font-extrabold text-purple-600 dark:text-purple-400 font-mono" id="bankGamingBalance">0 NC</div>
+                        <p class="text-[10px] text-slate-500">Награды из игр</p>
+                    </div>
+                </div>
+
+                <!-- Transfer Funds Form -->
+                <div class="bg-slate-100 dark:bg-slate-950 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 space-y-4">
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white">Перевод между счетами</h3>
+                    
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                            <label class="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Откуда</label>
+                            <select id="transferFrom" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                <option value="main">Основной Счёт</option>
+                                <option value="savings">Накопительный</option>
+                                <option value="gaming">Игровой</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Куда</label>
+                            <select id="transferTo" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                                <option value="savings">Накопительный</option>
+                                <option value="main">Основной Счёт</option>
+                                <option value="gaming">Игровой</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[11px] text-slate-500 dark:text-slate-400 mb-1">Сумма (NC)</label>
+                            <input type="number" id="transferAmount" placeholder="100" class="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                        </div>
+                    </div>
+
+                    <button onclick="executeBankTransfer()" class="px-5 py-2.5 bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs rounded-xl transition">
+                        Перевести Средства
+                    </button>
+                </div>
+
+                <!-- Transaction Log Table -->
+                <div>
+                    <h3 class="text-sm font-bold text-slate-900 dark:text-white mb-3">История операций</h3>
+                    <div class="bg-slate-100 dark:bg-slate-950 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-x-auto">
+                        <table class="w-full text-left text-xs text-slate-700 dark:text-slate-300">
+                            <thead class="bg-slate-200 dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-b border-slate-300 dark:border-slate-800">
+                                <tr>
+                                    <th class="p-3">Дата</th>
+                                    <th class="p-3">Тип</th>
+                                    <th class="p-3">Сумма</th>
+                                    <th class="p-3">Статус</th>
+                                </tr>
+                            </thead>
+                            <tbody id="bankTxLog">
+                                <!-- Dynamic logs -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 8: NUR MARKET -->
+        <section id="tab-market" class="tab-content space-y-6">
+            <div class="bg-white dark:bg-slate-900/90 rounded-3xl border border-slate-200 dark:border-slate-800 p-6 space-y-6 shadow-sm">
+                
+                <div class="flex flex-wrap items-center justify-between gap-4 border-b border-slate-200 dark:border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                            <i class="fa-solid fa-store text-pink-500 dark:text-pink-400"></i> Виртуальный NUR Маркет
+                        </h2>
+                        <p class="text-xs text-slate-500 dark:text-slate-400">Покупайте виртуальные бонусы и сувениры за NUR Coins</p>
+                    </div>
+
+                    <button onclick="toggleCartModal()" class="px-4 py-2 bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs rounded-xl transition flex items-center gap-2">
+                        <i class="fa-solid fa-cart-shopping"></i> Корзина (<span id="cartCount">0</span>)
+                    </button>
+                </div>
+
+                <!-- Catalog Grid -->
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4" id="marketCatalogGrid">
+                    <!-- Populated via JS -->
+                </div>
+
+            </div>
+        </section>
+
+        <!-- TAB 9: UTILITIES & SERVICES -->
+        <section id="tab-tools" class="tab-content space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                <!-- Utility 1: Currency Converter -->
+                <div class="bg-white dark:bg-slate-900/90 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-money-bill-transfer text-emerald-500 dark:text-emerald-400"></i> Конвертер Валют
+                    </h3>
+                    
+                    <div class="space-y-3 text-xs">
+                        <div>
+                            <label class="block text-slate-500 dark:text-slate-400 mb-1">Сумма в USD ($)</label>
+                            <input type="number" id="currUsd" value="100" oninput="convertCurrency()" class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-slate-900 dark:text-white">
+                        </div>
+                        <div class="p-3 bg-slate-100 dark:bg-slate-950 rounded-xl border border-slate-200 dark:border-slate-800 font-mono space-y-1">
+                            <div class="flex justify-between">
+                                <span class="text-slate-500 dark:text-slate-400">В узбекских сумах (UZS):</span>
+                                <span class="font-bold text-emerald-600 dark:text-emerald-400" id="currUzs">1 280 000 сум</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-500 dark:text-slate-400">В NUR Coins:</span>
+                                <span class="font-bold text-nur-gold" id="currNc">10 000 NC</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Utility 2: Quick Notes -->
+                <div class="bg-white dark:bg-slate-900/90 p-6 rounded-3xl border border-slate-200 dark:border-slate-800 space-y-4 shadow-sm">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                        <i class="fa-solid fa-note-sticky text-amber-500 dark:text-amber-400"></i> Заметки и Задачи
+                    </h3>
+                    
+                    <div class="flex gap-2">
+                        <input type="text" id="noteInput" placeholder="Новая заметка..." class="flex-grow bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-900 dark:text-white">
+                        <button onclick="addNote()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl transition">
+                            Добавить
+                        </button>
+                    </div>
+
+                    <ul id="notesList" class="space-y-2 text-xs max-h-40 overflow-y-auto">
+                        <!-- Dynamic notes -->
+                    </ul>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- GEMINI API MODAL -->
+    <div id="geminiModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
+            <h3 class="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                <i class="fa-solid fa-key text-nur-gold"></i> Подключение Gemini API Key
+            </h3>
+            <p class="text-xs text-slate-600 dark:text-slate-400">
+                Введите ваш личный ключ Google Gemini API для переключения ассистента в режим реальной нейросети. Если ключ не введён, будет работать автономный демо-режим.
+            </p>
+            <input type="password" id="geminiApiKeyInput" placeholder="AIzaSy..." class="w-full bg-slate-100 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-xl px-4 py-2.5 text-xs text-slate-900 dark:text-white focus:outline-none focus:border-nur-gold">
+            <div class="flex justify-end gap-2">
+                <button onclick="closeGeminiModal()" class="px-4 py-2 bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300 text-xs rounded-xl">Отмена</button>
+                <button onclick="saveGeminiApiKey()" class="px-4 py-2 bg-nur-gold text-slate-950 font-bold text-xs rounded-xl">Сохранить</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHOPPING CART MODAL -->
+    <div id="cartModal" class="hidden fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 p-6 rounded-3xl max-w-md w-full space-y-4 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-200 dark:border-slate-800 pb-2">
+                <h3 class="text-base font-bold text-slate-900 dark:text-white">Корзина Магазина</h3>
+                <button onclick="toggleCartModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-white"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            
+            <div id="cartItemsList" class="space-y-2 max-h-60 overflow-y-auto text-xs">
+                <!-- Cart items -->
+            </div>
+
+            <div class="border-t border-slate-200 dark:border-slate-800 pt-3 flex items-center justify-between text-xs">
+                <span class="text-slate-500 dark:text-slate-400">Итого:</span>
+                <span class="font-bold text-emerald-600 dark:text-emerald-400 font-mono text-sm" id="cartTotalPrice">0 NC</span>
+            </div>
+
+            <button onclick="checkoutCart()" class="w-full py-3 bg-pink-600 hover:bg-pink-500 text-white font-bold text-xs rounded-xl transition">
+                Оформить покупку
+            </button>
+        </div>
+    </div>
+
+    <!-- TOAST NOTIFICATION CONTAINER -->
+    <div id="toastBox" class="hidden fixed bottom-6 right-6 z-50 bg-white dark:bg-slate-900 border border-nur-gold/50 text-slate-900 dark:text-white px-5 py-3 rounded-2xl shadow-2xl text-xs font-medium flex items-center gap-2">
+        <i class="fa-solid fa-circle-check text-nur-gold"></i>
+        <span id="toastMsg">Уведомление</span>
+    </div>
+
+    <!-- FOOTER -->
+    <footer class="bg-slate-200 dark:bg-slate-950 border-t border-slate-300 dark:border-slate-800 text-slate-600 dark:text-slate-500 text-xs py-8 px-4 text-center space-y-2 transition-colors duration-300">
+        <p>© 2026 NUR DIGITAL. Единый многофункциональный национальный портал.</p>
+        <p class="text-[10px]">Узбекистан • Ташкент</p>
+    </footer>
+
+    <script>
+        let state = {
+            balance: 1000,
+            savings: 0,
+            gaming: 0,
+            theme: 'dark',
+            notes: ['Добро пожаловать в NUR DIGITAL!'],
+            geminiKey: '',
+            cart: [],
+            lastWheelSpin: null,
+            txHistory: [
+                { date: new Date().toLocaleDateString(), type: 'Приветственный бонус', amount: '+1000 NC', status: 'Зачислено' }
+            ]
+        };
+
+        function applyTheme(theme) {
+            state.theme = theme;
+            const html = document.documentElement;
+            const icon = document.getElementById('themeIcon');
+            const text = document.getElementById('themeText');
+
+            if (theme === 'light') {
+                html.classList.remove('dark');
+                html.classList.add('light');
+                if (icon) icon.innerText = '☀️';
+                if (text) text.innerText = 'День';
+            } else {
+                html.classList.remove('light');
+                html.classList.add('dark');
+                if (icon) icon.innerText = '🌙';
+                if (text) text.innerText = 'Ночь';
+            }
+        }
+
+        function toggleTheme() {
+            const nextTheme = state.theme === 'dark' ? 'light' : 'dark';
+            applyTheme(nextTheme);
+            saveStorageData();
+        }
+
+        // Load persisted state from localStorage
+        function loadStorageData() {
+            const saved = localStorage.getItem('NUR_DIGITAL_STATE');
+            if (saved) {
+                try {
+                    state = Object.assign(state, JSON.parse(saved));
+                } catch(e) {}
+            }
+            applyTheme(state.theme || 'dark');
+            updateBalanceUI();
+            renderNotes();
+            renderTxLog();
+            initWheelCanvas();
+        }
+
+        function saveStorageData() {
+            localStorage.setItem('NUR_DIGITAL_STATE', JSON.stringify(state));
+            updateBalanceUI();
+        }
+
+        function updateBalanceUI() {
+            document.getElementById('headerBalanceDisplay').innerText = state.balance.toLocaleString() + ' NC';
+            document.getElementById('bankMainBalance').innerText = state.balance.toLocaleString() + ' NC';
+            document.getElementById('bankSavingsBalance').innerText = state.savings.toLocaleString() + ' NC';
+            document.getElementById('bankGamingBalance').innerText = state.gaming.toLocaleString() + ' NC';
+        }
+
+        function showToast(msg) {
+            const box = document.getElementById('toastBox');
+            document.getElementById('toastMsg').innerText = msg;
+            box.classList.remove('hidden');
+            setTimeout(() => box.classList.add('hidden'), 3000);
+        }
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-tab').forEach(el => {
+                el.classList.remove('text-nur-gold', 'bg-slate-800', 'font-bold');
+                el.classList.add('text-slate-300');
+            });
+
+            const targetTab = document.getElementById('tab-' + tabId);
+            const targetBtn = document.getElementById('tabBtn-' + tabId);
+
+            if (targetTab) targetTab.classList.add('active');
+            if (targetBtn) {
+                targetBtn.classList.remove('text-slate-300');
+                targetBtn.classList.add('text-nur-gold', 'bg-slate-800', 'font-bold');
+            }
+
+            if (tabId === 'map') {
+                setTimeout(initLeafletMap, 200);
+            }
+        }
+
+        function updateClock() {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString('ru-RU');
+            const dateStr = now.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
+            document.getElementById('liveDateTime').innerText = `${timeStr} | ${dateStr} | Ташкент`;
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        function toggleTheme() {
+            const html = document.documentElement;
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                document.getElementById('themeIcon').innerText = '☀️';
+                document.getElementById('themeText').innerText = 'День';
+                state.theme = 'light';
+            } else {
+                html.classList.add('dark');
+                document.getElementById('themeIcon').innerText = '🌙';
+                document.getElementById('themeText').innerText = 'Ночь';
+                state.theme = 'dark';
+            }
+            saveStorageData();
+        }
+
+        function toggleNotifications() {
+            document.getElementById('notificationsPanel').classList.toggle('hidden');
+        }
+
+        function sendAiMessage() {
+            const input = document.getElementById('aiUserInput');
+            const q = input.value.trim();
+            if (!q) return;
+
+            const win = document.getElementById('aiChatWindow');
+            win.innerHTML += `
+                <div class="flex gap-3 max-w-[85%] ml-auto flex-row-reverse">
+                    <div class="bg-nur-500 p-3.5 rounded-2xl rounded-tr-none text-white">
+                        ${q}
+                    </div>
+                </div>
+            `;
+            input.value = '';
+            win.scrollTop = win.scrollHeight;
+
+            document.getElementById('aiTypingIndicator').classList.remove('hidden');
+
+            setTimeout(() => {
+                document.getElementById('aiTypingIndicator').classList.add('hidden');
+                
+                let reply = "Отличный вопрос! Рад помочь вам с этой темой.";
+                const lower = q.toLowerCase();
+
+                if (lower.includes("математик") || lower.includes("вычисли")) {
+                    reply = "Математика — основа современных цифровых технологий. Например: 2 + 2 = 4, а квадратный корень из 144 равен 12.";
+                } else if (lower.includes("истори") || lower.includes("узбекистан") || lower.includes("самарканд")) {
+                    reply = "Узбекистан имеет богатейшую историю: Великий Шёлковый путь, архитектура Самарканда и Бухары, и великие учёные как Аль-Хорезми и Ибн Сино!";
+                } else if (lower.includes("код") || lower.includes("программирование") || lower.includes("js")) {
+                    reply = "Для веб-разработки используйте классическую связку HTML5, CSS3 и JavaScript. Данный портал как раз построен на этой стеке!";
+                }
+
+                win.innerHTML += `
+                    <div class="flex gap-3 max-w-[85%]">
+                        <div class="w-7 h-7 rounded-lg bg-cyan-500/20 text-cyan-400 flex items-center justify-center shrink-0 border border-cyan-500/30">
+                            <i class="fa-solid fa-robot text-xs"></i>
+                        </div>
+                        <div class="bg-slate-800/90 p-3.5 rounded-2xl rounded-tl-none border border-slate-700/60 text-slate-200">
+                            ${reply}
+                        </div>
+                    </div>
+                `;
+                win.scrollTop = win.scrollHeight;
+            }, 800);
+        }
+
+        function clearAiChat() {
+            document.getElementById('aiChatWindow').innerHTML = '';
+            showToast('Чат очищен');
+        }
+
+        function openGeminiModal() { document.getElementById('geminiModal').classList.remove('hidden'); }
+        function closeGeminiModal() { document.getElementById('geminiModal').classList.add('hidden'); }
+        function saveGeminiApiKey() {
+            state.geminiKey = document.getElementById('geminiApiKeyInput').value;
+            saveStorageData();
+            closeGeminiModal();
+            showToast('Gemini API Key сохранен');
+        }
+
+        const weatherCities = {
+            'Ташкент': { temp: '+24°C', feels: '+25°C', cond: 'Солнечно, без осадков', hum: '42%', wind: '4.2 м/с' },
+            'Самарканд': { temp: '+22°C', feels: '+22°C', cond: 'Ясно', hum: '45%', wind: '3.8 м/с' },
+            'Бухара': { temp: '+26°C', feels: '+27°C', cond: 'Малооблачно', hum: '35%', wind: '5.1 м/с' },
+            'Хива': { temp: '+25°C', feels: '+25°C', cond: 'Ясно', hum: '30%', wind: '4.5 м/с' },
+            'Андижан': { temp: '+21°C', feels: '+21°C', cond: 'Переменная облачность', hum: '50%', wind: '2.9 м/с' }
+        };
+
+        function changeCityWeather(city) {
+            const data = weatherCities[city] || weatherCities['Ташкент'];
+            document.getElementById('weatherCityName').innerText = city;
+            document.getElementById('weatherTemp').innerText = data.temp;
+            document.getElementById('weatherFeels').innerText = data.feels;
+            document.getElementById('weatherCondition').innerText = data.cond;
+            document.getElementById('weatherHumidity').innerText = data.hum;
+            document.getElementById('weatherWind').innerText = data.wind;
+
+            renderForecast();
+        }
+
+        function renderForecast() {
+            const grid = document.getElementById('weatherForecastGrid');
+            const days = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт'];
+            grid.innerHTML = days.map((d, i) => `
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center space-y-1">
+                    <span class="text-[10px] text-slate-400 block">${d}</span>
+                    <i class="fa-solid fa-sun text-amber-400 text-base"></i>
+                    <span class="text-xs font-bold text-white block">+${22 + i}°C</span>
+                </div>
+            `).join('');
+        }
+
+        let mapInstance = null;
+        function initLeafletMap() {
+            if (mapInstance) return;
+
+            mapInstance = L.map('leafletMap').setView([41.2995, 69.2401], 6); // Centered on Uzbekistan
+
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap'
+            }).addTo(mapInstance);
+
+            // Pre-added Landmarks
+            const spots = [
+                { name: "Площадь Регистан (Самарканд)", lat: 39.6547, lng: 66.9758 },
+                { name: "Ансамбль Пои-Калян (Бухара)", lat: 39.7756, lng: 64.4158 },
+                { name: "Ичан-Кала (Хива)", lat: 41.3783, lng: 60.3597 },
+                { name: "Ташкентская Телебашня", lat: 41.3461, lng: 69.2845 }
+            ];
+
+            spots.forEach(s => {
+                L.marker([s.lat, s.lng]).addTo(mapInstance)
+                    .bindPopup(`<b>${s.name}</b>`);
+            });
+
+            mapInstance.on('click', function(e) {
+                L.marker([e.latlng.lat, e.latlng.lng]).addTo(mapInstance)
+                    .bindPopup("Ваша пользовательская метка")
+                    .openPopup();
+                showToast('Метка добавлена на карту!');
+            });
+        }
+
+        function getUserLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(pos => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    if (mapInstance) {
+                        mapInstance.setView([lat, lng], 13);
+                        L.marker([lat, lng]).addTo(mapInstance).bindPopup("Вы здесь!").openPopup();
+                    }
+                }, () => showToast('Геолокация недоступна'));
+            }
+        }
+
+        function activateGame(gameId) {
+            document.querySelectorAll('.game-container').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.game-select-btn').forEach(el => el.classList.remove('border-purple-500', 'border-2'));
+
+            document.getElementById('gameView-' + gameId).classList.remove('hidden');
+            document.getElementById('gameBtn-' + gameId).classList.add('border-purple-500', 'border-2');
+
+            if (gameId === 'snake') startSnakeGame();
+            if (gameId === '2048') init2048();
+            if (gameId === 'memory') initMemoryGame();
+            if (gameId === 'math') nextMathQuestion();
+        }
+
+        // Snake Implementation
+        let snakeLoop = null;
+        let snake = [{x: 10, y: 10}];
+        let snakeDir = {x: 1, y: 0};
+        let snakeFood = {x: 5, y: 5};
+        let snakeScore = 0;
+
+        function startSnakeGame() {
+            if (snakeLoop) clearInterval(snakeLoop);
+            snake = [{x: 10, y: 10}];
+            snakeDir = {x: 1, y: 0};
+            snakeScore = 0;
+            document.getElementById('snakeScore').innerText = snakeScore;
+
+            snakeLoop = setInterval(updateSnake, 120);
+        }
+
+        function updateSnake() {
+            const canvas = document.getElementById('snakeCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const gridSize = 20;
+            const tileCount = 20;
+
+            const head = {x: snake[0].x + snakeDir.x, y: snake[0].y + snakeDir.y};
+
+            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                clearInterval(snakeLoop);
+                showToast('Игра окончена! Счёт: ' + snakeScore);
+                return;
+            }
+
+            snake.unshift(head);
+
+            if (head.x === snakeFood.x && head.y === snakeFood.y) {
+                snakeScore += 10;
+                document.getElementById('snakeScore').innerText = snakeScore;
+                state.gaming += 10;
+                saveStorageData();
+                snakeFood = {
+                    x: Math.floor(Math.random() * tileCount),
+                    y: Math.floor(Math.random() * tileCount)
+                };
+            } else {
+                snake.pop();
+            }
+
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            ctx.fillStyle = '#a855f7';
+            snake.forEach((p, i) => {
+                ctx.fillRect(p.x * gridSize, p.y * gridSize, gridSize - 2, gridSize - 2);
+            });
+
+            ctx.fillStyle = '#f4a261';
+            ctx.fillRect(snakeFood.x * gridSize, snakeFood.y * gridSize, gridSize - 2, gridSize - 2);
+        }
+
+        function handleSnakeDir(dir) {
+            if (dir === 'UP' && snakeDir.y === 0) snakeDir = {x: 0, y: -1};
+            if (dir === 'DOWN' && snakeDir.y === 0) snakeDir = {x: 0, y: 1};
+            if (dir === 'LEFT' && snakeDir.x === 0) snakeDir = {x: -1, y: 0};
+            if (dir === 'RIGHT' && snakeDir.x === 0) snakeDir = {x: 1, y: 0};
+        }
+
+        window.addEventListener('keydown', e => {
+            if (e.key === 'ArrowUp') handleSnakeDir('UP');
+            if (e.key === 'ArrowDown') handleSnakeDir('DOWN');
+            if (e.key === 'ArrowLeft') handleSnakeDir('LEFT');
+            if (e.key === 'ArrowRight') handleSnakeDir('RIGHT');
+        });
+
+        // 2048 Implementation
+        function init2048() {
+            const grid = document.getElementById('grid2048');
+            grid.innerHTML = '';
+            for (let i = 0; i < 16; i++) {
+                grid.innerHTML += `<div class="bg-slate-900 border border-slate-800 rounded-xl flex items-center justify-center font-bold text-slate-500 text-lg">0</div>`;
+            }
+        }
+
+        // Memory Game
+        function initMemoryGame() {
+            const grid = document.getElementById('memoryGrid');
+            const icons = ['☀️', '🌙', '⭐', '💎', '☀️', '🌙', '⭐', '💎'];
+            icons.sort(() => Math.random() - 0.5);
+
+            grid.innerHTML = icons.map((ic, i) => `
+                <button onclick="this.innerText='${ic}'" class="h-16 bg-slate-950 border border-slate-800 rounded-xl font-bold text-xl text-white flex items-center justify-center">
+                    ❓
+                </button>
+            `).join('');
+        }
+
+        // Math Challenge
+        let currentMathAns = 0;
+        function nextMathQuestion() {
+            const a = Math.floor(Math.random() * 20) + 1;
+            const b = Math.floor(Math.random() * 20) + 1;
+            currentMathAns = a + b;
+            document.getElementById('mathQuestion').innerText = `${a} + ${b} = ?`;
+            document.getElementById('mathAnswerInput').value = '';
+        }
+
+        function checkMathAnswer() {
+            const val = parseInt(document.getElementById('mathAnswerInput').value);
+            if (val === currentMathAns) {
+                showToast('Правильно! +20 NC');
+                state.gaming += 20;
+                saveStorageData();
+                nextMathQuestion();
+            } else {
+                showToast('Неверно, попробуйте еще раз');
+            }
+        }
+
+        function initWheelCanvas() {
+            const canvas = document.getElementById('wheelCanvas');
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            const slices = ['100 NC', '500 NC', '200 NC', 'JACKPOT 2000', '50 NC', '1000 NC', '150 NC', 'BONUS'];
+            const colors = ['#0d5c63', '#f4a261', '#2a9d8f', '#e76f51', '#09474d', '#e9c46a', '#14b8a6', '#f59e0b'];
+
+            const angle = (2 * Math.PI) / slices.length;
+
+            for (let i = 0; i < slices.length; i++) {
+                ctx.beginPath();
+                ctx.fillStyle = colors[i];
+                ctx.moveTo(160, 160);
+                ctx.arc(160, 160, 160, i * angle, (i + 1) * angle);
+                ctx.fill();
+
+                ctx.save();
+                ctx.translate(160, 160);
+                ctx.rotate(i * angle + angle / 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.font = 'bold 12px sans-serif';
+                ctx.fillText(slices[i], 50, 4);
+                ctx.restore();
+            }
+        }
+
+        function spinWheel() {
+            const canvas = document.getElementById('wheelCanvas');
+            const randomDeg = Math.floor(2000 + Math.random() * 2000);
+            canvas.style.transform = `rotate(${randomDeg}deg)`;
+
+            setTimeout(() => {
+                const prize = 500;
+                state.balance += prize;
+                state.txHistory.unshift({ date: new Date().toLocaleDateString(), type: 'Колесо удачи', amount: `+${prize} NC`, status: 'Успешно' });
+                saveStorageData();
+                renderTxLog();
+                showToast(`Вы выиграли ${prize} NC!`);
+            }, 4000);
+        }
+
+        function executeBankTransfer() {
+            const amount = parseInt(document.getElementById('transferAmount').value);
+            if (!amount || amount <= 0 || state.balance < amount) {
+                showToast('Недостаточно средств!');
+                return;
+            }
+
+            state.balance -= amount;
+            state.savings += amount;
+            state.txHistory.unshift({ date: new Date().toLocaleDateString(), type: 'Перевод на накопления', amount: `-${amount} NC`, status: 'Выполнено' });
+            saveStorageData();
+            renderTxLog();
+            showToast('Перевод успешно выполнен!');
+        }
+
+        function renderTxLog() {
+            const tbody = document.getElementById('bankTxLog');
+            tbody.innerHTML = state.txHistory.map(tx => `
+                <tr class="border-b border-slate-800/60">
+                    <td class="p-3">${tx.date}</td>
+                    <td class="p-3">${tx.type}</td>
+                    <td class="p-3 font-mono font-bold ${tx.amount.startsWith('+') ? 'text-emerald-400' : 'text-rose-400'}">${tx.amount}</td>
+                    <td class="p-3 text-slate-400">${tx.status}</td>
+                </tr>
+            `).join('');
+        }
+
+        const marketItems = [
+            { id: 1, name: 'VIP Статус Профиля', price: 500, icon: 'fa-crown', color: 'text-amber-400' },
+            { id: 2, name: 'Скидочный Купон 10%', price: 200, icon: 'fa-ticket', color: 'text-pink-400' },
+            { id: 3, name: 'Набор Эмодзи "Самарканд"', price: 150, icon: 'fa-icons', color: 'text-cyan-400' }
+        ];
+
+        function renderMarketCatalog() {
+            const grid = document.getElementById('marketCatalogGrid');
+            grid.innerHTML = marketItems.map(item => `
+                <div class="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <i class="fa-solid ${item.icon} ${item.color} text-3xl"></i>
+                    <h4 class="font-bold text-white text-sm">${item.name}</h4>
+                    <div class="text-xs font-mono font-bold text-emerald-400">${item.price} NC</div>
+                    <button onclick="addToCart(${item.id})" class="w-full py-2 bg-pink-600/20 hover:bg-pink-600 text-pink-400 hover:text-white font-bold text-xs rounded-xl border border-pink-500/30 transition">
+                        В корзину
+                    </button>
+                </div>
+            `).join('');
+        }
+
+        function addToCart(id) {
+            const item = marketItems.find(i => i.id === id);
+            state.cart.push(item);
+            document.getElementById('cartCount').innerText = state.cart.length;
+            showToast(`Товар "${item.name}" добавлен`);
+        }
+
+        function toggleCartModal() {
+            const modal = document.getElementById('cartModal');
+            modal.classList.toggle('hidden');
+            
+            const list = document.getElementById('cartItemsList');
+            const total = state.cart.reduce((sum, item) => sum + item.price, 0);
+
+            list.innerHTML = state.cart.map(i => `
+                <div class="flex justify-between items-center bg-slate-950 p-2.5 rounded-xl">
+                    <span>${i.name}</span>
+                    <span class="font-mono text-emerald-400 font-bold">${i.price} NC</span>
+                </div>
+            `).join('');
+
+            document.getElementById('cartTotalPrice').innerText = total + ' NC';
+        }
+
+        function checkoutCart() {
+            const total = state.cart.reduce((sum, item) => sum + item.price, 0);
+            if (state.balance < total) {
+                showToast('Недостаточно NUR Coins!');
+                return;
+            }
+
+            state.balance -= total;
+            state.cart = [];
+            document.getElementById('cartCount').innerText = '0';
+            toggleCartModal();
+            saveStorageData();
+            showToast('Покупка совершена!');
+        }
+
+        function convertCurrency() {
+            const usd = parseFloat(document.getElementById('currUsd').value) || 0;
+            document.getElementById('currUzs').innerText = (usd * 12800).toLocaleString('ru-RU') + ' сум';
+            document.getElementById('currNc').innerText = (usd * 100).toLocaleString('ru-RU') + ' NC';
+        }
+
+        function addNote() {
+            const val = document.getElementById('noteInput').value.trim();
+            if (!val) return;
+            state.notes.push(val);
+            document.getElementById('noteInput').value = '';
+            renderNotes();
+            saveStorageData();
+        }
+
+        function renderNotes() {
+            const list = document.getElementById('notesList');
+            list.innerHTML = state.notes.map((n, i) => `
+                <li class="bg-slate-950 p-2.5 rounded-xl border border-slate-800 flex justify-between items-center">
+                    <span>${n}</span>
+                    <button onclick="state.notes.splice(${i}, 1); renderNotes(); saveStorageData();" class="text-rose-400"><i class="fa-solid fa-trash"></i></button>
+                </li>
+            `).join('');
+        }
+
+        let logoClicks = 0;
+        function easterEggClick() {
+            logoClicks++;
+            if (logoClicks >= 5) {
+                showToast('🎉 Пасхалка разблокирована! Золотой Регистан +500 NC');
+                state.balance += 500;
+                saveStorageData();
+                logoClicks = 0;
+            }
+        }
+
+        function executeGlobalSearch() {
+            const val = document.getElementById('globalHomeSearch').value.trim();
+            if (val.toUpperCase() === 'NUR2026') {
+                showToast('🎁 Промокод NUR2026 активирован! +300 NC');
+                state.balance += 300;
+                saveStorageData();
+            } else {
+                showToast(`Поиск по запросу: "${val}"`);
+            }
+        }
+
+        window.onload = function() {
+            loadStorageData();
+            renderForecast();
+            renderMarketCatalog();
+        };
+    </script>
+</body>
+</html>
